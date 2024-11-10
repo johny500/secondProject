@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+
+    <h3  id="textH3"></h3>
+    <button id="departmentsPage" style="visibility: hidden;" onclick="departmentsPage()">departments Page</button>
+    <button onclick="logOut()" style="visibility: hidden;" id="logOut">Log out</button>
+      
+     <button onclick="fetchAllemployees()">Get all employees</button>
+
+    <table border="1" id="tab"> 
+        <tr>
+            <td>Full Name</td>
+            <td>Department</td>
+            <td>Shifts</td>
+            <td>Started working</td>
+        </tr>
+    </table>
+
+<button onclick="newEmployee()"> Create new Employee</button>
+
+    <script>
+let table =document.getElementById("tab")
+
+const token = localStorage.getItem('authorization'); 
+
+if(token){
+    document.getElementById("logOut").style.visibility="visible"
+
+    const username = localStorage.getItem('name'); 
+
+    h3=document.getElementById("textH3")
+    h3.innerText="Hello "+username
+
+    document.getElementById("departmentsPage").style.visibility="visible"
+    document.getElementById("employeesPage").style.visibility="visible"
+}
+
+  function logOut(){
+   localStorage.removeItem("authorization")
+   localStorage.removeItem("name")
+   window.location.href = "./LoginPage.html"
+         
+}
+
+function newEmployee(){
+    window.location.href = "./newEmployeePage.html"
+}
+
+function departmentsPage(){
+            window.location.href = "./departmentsPage.html"
+         }
+
+
+async function fetchAllemployees() {
+    table.innerHTML=`
+            <tr>
+            <td>Full Name</td>
+            <td>Department</td>
+            <td>Shifts</td>
+            <td>Started working</td>
+        </tr>
+        `
+        const resp = await fetch(`http://localhost:8000/employee/`, {
+            method: "GET",
+            headers: {
+                "authorization": token,
+                "Content-Type": "application/json"
+            }
+        });
+
+        const data = await resp.json();
+       
+        const employees = data;
+            employees.forEach((employee) => {
+                
+                const tr = document.createElement("tr")
+                table.appendChild(tr)
+
+                const tdFullName = document.createElement("td")
+                let fullName=employee.FirstName + " " + employee.LastName
+                tdFullName.innerText =fullName
+                tr.appendChild(tdFullName)
+
+                const tdepartmentID = document.createElement("td")
+                tdepartmentID.innerText = employee.DepartmentID
+                tr.appendChild(tdepartmentID)
+
+
+                const tdShift = document.createElement("td")
+                tdShift.innerText = employee.Shifts
+                tr.appendChild(tdShift)
+
+                const tdStartedWorkinYear = document.createElement("td")
+                tdStartedWorkinYear.innerText = employee.StartWorkYear
+                tr.appendChild(tdStartedWorkinYear)
+
+                tdFullName.addEventListener('click', function() {
+                    localStorage.setItem("Employee", employee._id)
+                    window.location.href = "./editEmployeePage.html"
+                 })
+             })
+        }
+
+
+    </script>
+</body>
+</html>

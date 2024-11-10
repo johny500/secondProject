@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body onload="getEmployee()">
+
+    <h3  id="textH3"></h3>
+
+    <table border="1" id="tab"> 
+        <tr>
+            <td>First Name</td>
+            <td>Last Name</td>
+            <td>Department</td>
+            <td>Started working</td>
+        </tr>
+    </table>
+
+    <button onclick="updateEmployee()">Update!</button>
+    
+    <button onclick="deleteEmployee()">Delete!</button>
+
+    <button onclick="Cancel()">Cancel</button>
+
+    <script>
+    const EmployeeID = localStorage.getItem('Employee'); 
+
+    const token = localStorage.getItem('authorization'); 
+
+    if(token){
+    document.getElementById("logOut").style.visibility="visible"
+
+    const username = localStorage.getItem('name'); 
+
+    h3=document.getElementById("textH3")
+    h3.innerText="Hello "+username
+
+    document.getElementById("departmentsPage").style.visibility="visible"
+    document.getElementById("employeesPage").style.visibility="visible"
+}
+
+    
+
+    if(!EmployeeID){
+        alert("Error Getting the Employee ID")
+        window.location.href = "./employeesPage.html"
+    }
+
+     async function getEmployee(){
+        let table=document.getElementById("tab")
+        const resp = await fetch(`http://localhost:8000/employee/${EmployeeID}`, {
+                method: "GET",
+                headers: { "authorization": token,"Content-Type": "application/json" },           
+            })
+            const employee = await resp.json()
+            console.log(employee)
+
+            const tr = document.createElement("tr")
+            table.appendChild(tr)
+
+                const tdFirstName = document.createElement("td")
+                let inputFirstName=document.createElement("input")
+                inputFirstName.value=employee.FirstName
+                inputFirstName.id="firstName"
+                tdFirstName.appendChild(inputFirstName)
+                tr.appendChild(tdFirstName)
+
+
+                const tdLastName = document.createElement("td")
+                let inputLastName=document.createElement("input")
+                inputLastName.value=employee.LastName
+                inputLastName.id="lastName"
+                tdLastName.appendChild(inputLastName)
+                tr.appendChild(tdLastName)
+
+                const tdepartmentID = document.createElement("td")
+                let inputDepartmentID=document.createElement("input")
+                inputDepartmentID.value=employee.DepartmentID
+                inputDepartmentID.id="department"
+                tdepartmentID.appendChild(inputDepartmentID)
+                tr.appendChild(tdepartmentID)
+
+
+                
+                const tdStartedWorkinYear = document.createElement("td")
+                tdStartedWorkinYear.innerText=employee.StartWorkYear
+                tr.appendChild(tdStartedWorkinYear)
+
+
+     }
+
+
+
+
+    async function updateEmployee (){
+
+        const FirstName = document.getElementById("firstName").value
+        const LastName = document.getElementById("lastName").value
+        const DepartmentID = document.getElementById("department").value
+
+             if (!FirstName && !LastName && !DepartmentID){
+              alert("please enter a all")
+              return "put all the values!"
+             }
+
+            const resp = await fetch(`http://localhost:8000/employee/${EmployeeID}`, {
+                method: "PUT",
+                headers: { "authorization": token,"Content-Type": "application/json" },
+                body: JSON.stringify({ FirstName,LastName,DepartmentID })
+                
+            })
+
+
+            console.log(JSON.stringify({ FirstName,LastName,DepartmentID }));
+            const data = await resp.json()
+            console.log(data)
+            if (!data.success) {
+                alert("Department not found")
+                return
+            }
+            
+            alert(data.msg)
+            window.location.href = "./employeesPage.html"
+        }
+
+
+        async function deleteEmployee(){
+            const resp = await fetch(`http://localhost:8000/employee/${EmployeeID}`, {
+                method: "DELETE",
+                headers: {"authorization": token, "Content-Type": "application/json" }
+            })
+            alert("Deleted!")
+            window.location.href = "./employeesPage.html"
+        }
+
+
+    function Cancel(){
+    window.location.href = "./employeesPage.html"
+    }
+
+    </script>
+
+</body>
+</html>

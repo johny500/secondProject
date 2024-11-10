@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body onload="fetchAllShifts()">
+<h2 id="empText" style="visibility: hidden;">Employee Table</h2>
+    <table border="1" id="empTab" style="visibility: hidden;">
+        <tr>
+            <td>Full Name</td>
+            <td>Department</td>
+            <td>Started Working year</td>
+        </tr>
+    </table>
+
+    <br><br>
+
+    <table border="1" id="tab">
+        <tr>
+            <td>Date</td>
+            <td>Starting Hour</td>
+            <td>Ending Hour</td>
+            <td>Employees</td>
+        </tr>
+    </table>
+    <button onclick="createShift()">Create Shift</button>
+          <form id="createShift" style="visibility: hidden;">
+           <h2 id="Text">Create shift</h2>
+           <table border="1" id="createShiftTable">
+            <tr>
+                <td>Date</td>
+                <td>Starting Hour</td>
+                <td>Ending Hour</td>
+            </tr>
+           </table>
+          </form>
+    <script>
+        const token = localStorage.getItem('authorization'); 
+        const shiftId = localStorage.getItem('shiftId'); 
+    async function employeeTable(){
+    let employeetable=document.getElementById("empTab")
+    employeetable.style.visibility="visible"
+    
+    let h2=document.getElementById("empText")
+    h2.style.visibility="visible"
+   
+
+    const resp = await fetch(`http://localhost:8000/employee/`, {
+            method: "GET",
+            headers: {
+                "authorization": token,
+                "Content-Type": "application/json"
+            }
+        });
+
+        const data = await resp.json();
+       
+        const employees = data;
+
+        employeetable.innerHTML=`
+          <tr>
+            <td>Full Name</td>
+            <td>Department</td>
+            <td>Started Working year</td>
+        </tr>
+        `
+
+            employees.forEach((employee) => {
+                const shiftId = localStorage.getItem('shiftId'); 
+                let employeeShiftExist=employee.Shifts.includes(shiftId)
+                if(employeeShiftExist) return
+                const tr = document.createElement("tr")
+                employeetable.appendChild(tr)
+
+
+                const tdFullName = document.createElement("td")
+                let fullName=employee.FirstName + " " + employee.LastName
+                tdFullName.innerText =fullName
+                tr.appendChild(tdFullName)
+
+
+                const tdDepartment = document.createElement("td")
+                tdDepartment.innerText = employee.Department
+                console.log(employee._id)
+                tr.appendChild(tdDepartment)
+
+                const tdStartedWorkinYear = document.createElement("td")
+                tdStartedWorkinYear.innerText = employee.StartWorkYear
+                tr.appendChild(tdStartedWorkinYear)
+
+
+                const tdAddButton = document.createElement("td")
+                const Button = document.createElement("button")
+                Button.innerText = "Add"
+                tdAddButton.appendChild(Button)
+                tr.appendChild(tdAddButton)
+
+               
+                
+
+                Button.addEventListener('click',async function() {
+                    await AddEmployeeToShift(employee._id)
+                 })
+
+                tdFullName.addEventListener('click', function() {
+                    localStorage.setItem("Employee", employee._id)
+                    window.location.href = "./editEmployeePage.html"
+                 })
+
+             })         
+  }
+
+ async function AddEmployeeToShift(id){
+
+    const shiftId = localStorage.getItem('shiftId'); 
+    const resp = await fetch(`http://localhost:8000/shift/employee/${shiftId}`, {
+                method: "PUT",
+                headers: { "authorization": token,"Content-Type": "application/json" },
+                body: JSON.stringify({id})
+                
+            })
+            const data = await resp.json();
+            if (data.msg.status==="error") {
+                
+            alert("something went worng")
+            console.log(data)
+            return "something went worng"
+            }
+            
+            alert("updated")
+
+}
+
+
+ 
+        async function fetchAllShifts(){
+        
+    let table =document.getElementById("tab")
+        const resp = await fetch(`http://localhost:8000/shift/`, {
+            method: "GET",
+            headers: {
+                "authorization": token,
+                "Content-Type": "application/json"
+            }
+        });
+
+        const data = await resp.json();
+       console.log(resp)
+        const shifts = data;
+
+            shifts.forEach((shift) => {
+
+                const tr = document.createElement("tr")
+                table.appendChild(tr)
+
+                console.log(shift)
+                const tdDate = document.createElement("td")
+                tdDate.innerText =shift.Date
+                tr.appendChild(tdDate)
+
+                const tdStartingHour = document.createElement("td")
+                tdStartingHour.innerText =shift.StartingHour
+                tr.appendChild(tdStartingHour)
+
+                const tdEndingHour = document.createElement("td")
+                tdEndingHour.innerText = shift.EndingHour
+                tr.appendChild(tdEndingHour)
+
+
+                const tdEmployees = document.createElement("td")
+                let allEmployess=shift.Employees
+
+                allEmployess.forEach((emp)=>{
+                    let tdFullName=document.createElement("td")
+                    tdFullName.innerText=emp.FirstName+ " "+ emp.LastName
+                    tdEmployees.appendChild(tdFullName)
+
+                    tdFullName.addEventListener('click', function() {
+
+                    localStorage.setItem("Employee", emp._id)
+
+                    window.location.href = "./editEmployeePage.html"
+                    
+                 })
+
+                })
+
+                tr.appendChild(tdEmployees)
+
+              
+        tr.onclick=async function(){
+        localStorage.setItem("shiftId", shift._id)
+
+        employeeTable()
+
+        
+
+        let form=document.getElementById("createShift")
+        form.style.visibility="visible"
+        let h2=document.getElementById("Text")
+        h2.innerText="Edit Shift"
+
+        let table=document.getElementById("createShiftTable")
+
+        table.innerHTML=`
+          <tr>
+                <td>Date</td>
+                <td>Starting Hour</td>
+                <td>Ending Hour</td>
+            </tr>`
+
+
+        let tr=document.createElement("tr")
+        table.appendChild(tr)
+
+        let tdDate=document.createElement("td")
+        let inputDate=document.createElement("input")
+        inputDate.type="date"
+        inputDate.value=shift.Date
+        tdDate.appendChild(inputDate)
+        tr.appendChild(tdDate)
+
+        let tdStartingHour=document.createElement("td")
+        let inputStartingHour=document.createElement("input")
+        inputStartingHour.type="time"
+        inputStartingHour.value=shift.StartingHour
+        inputStartingHour.min="00:00"
+        inputStartingHour.max="23:59"
+        tdStartingHour.appendChild(inputStartingHour)
+        tr.appendChild(tdStartingHour)
+
+        let tdEndingHour=document.createElement("td")
+        let inputEndingHour=document.createElement("input")
+        inputEndingHour.type="time"
+        inputEndingHour.value=shift.EndingHour
+        inputEndingHour.min="00:00"
+        inputEndingHour.max="23:59" 
+        tdEndingHour.appendChild(inputEndingHour)
+        tr.appendChild(tdEndingHour)
+        
+        let tdButtonEdit=document.createElement("td")
+        let buttonEdit=document.createElement("button")
+        buttonEdit.innerText="Edit"
+        tr.appendChild(tdButtonEdit)
+        tdButtonEdit.appendChild(buttonEdit)
+
+        buttonEdit.onclick=async function(){
+        const date=inputDate.value
+        const StartHour=inputStartingHour.value
+        const EndHour=inputEndingHour.value
+
+        if(!date && !StartHour && !EndHour) {
+            alert("Please fill out all fields.");
+            return "Please fill out all fields"
+        }
+        
+            const Shift={
+                Date:date,
+                StartingHour: StartHour, 
+                EndingHour: EndHour,
+                Employees: []
+            }
+        console.log(shift._id)
+        const resp = await fetch(`http://localhost:8000/shift/${shift._id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    "authorization": token,
+                },
+                body: JSON.stringify(Shift)
+            });
+            const data=await resp.json();
+            alert(data.msg )
+            table.removeChild(tr)
+       }
+                 }
+
+             })
+        }
+
+        
+
+      
+     async function createShift(){ 
+        let form=document.getElementById("createShift")
+        form.style.visibility="visible"
+        
+        document.getElementById("Text").innerText="Create Shift"
+        
+        let table=document.getElementById("createShiftTable")
+        table.innerHTML=`
+          <tr>
+                <td>Date</td>
+                <td>Starting Hour</td>
+                <td>Ending Hour</td>
+            </tr>`
+
+        let tr=document.createElement("tr")
+        table.appendChild(tr)
+
+        let tdDate=document.createElement("td")
+        let inputDate=document.createElement("input")
+        inputDate.type="date"
+        tdDate.appendChild(inputDate)
+        tr.appendChild(tdDate)
+
+        let tdStartingHour=document.createElement("td")
+        let inputStartingHour=document.createElement("input")
+        inputStartingHour.type="time"
+        inputStartingHour.min="00:00"
+        inputStartingHour.max="23:59"
+        tdStartingHour.appendChild(inputStartingHour)
+        tr.appendChild(tdStartingHour)
+
+        let tdEndingHour=document.createElement("td")
+        let inputEndingHour=document.createElement("input")
+        inputEndingHour.type="time"
+        inputEndingHour.min="00:00"
+        inputEndingHour.max="23:59" 
+        tdEndingHour.appendChild(inputEndingHour)
+        tr.appendChild(tdEndingHour)
+        
+        let tdButtonCreate=document.createElement("td")
+        let buttonCreate=document.createElement("button")
+        buttonCreate.innerText="Create"
+        tr.appendChild(tdButtonCreate)
+        tdButtonCreate.appendChild(buttonCreate)
+
+       buttonCreate.onclick=async function(){
+        const date=inputDate.value
+        const StartHour=inputStartingHour.value
+        const EndHour=inputEndingHour.value
+
+        if(!date && !StartHour && !EndHour) {
+            alert("Please fill out all fields.");
+            return "Please fill out all fields"
+        }
+        
+            const Shift={
+                Date:date,
+                StartingHour: StartHour, 
+                EndingHour: EndHour,
+                Employees: []
+            }
+        
+        const resp = await fetch('http://localhost:8000/shift', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    "authorization": token,
+                },
+                body: JSON.stringify(Shift)
+            });
+            const data=await resp.json();
+            alert(data.msg )
+            table.removeChild(tr)
+       }}
+
+     
+
+    </script>
+</body>
+</html>

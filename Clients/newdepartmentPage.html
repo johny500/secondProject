@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+
+    <h3  id="textH3"></h3>
+
+    <button onclick="logOut()" style="visibility: hidden;" id="logOut">Log out</button>
+    <br><br>
+    Name: <input type="text" placeholder="Name" id="Name">
+    ManagerID: <input type="text" placeholder="ManagerID" id="ManagerID">
+    <button onclick="Create()">Save Button</button>
+    <button onclick="Cancel()">Cancel</button>
+
+    <script>
+        const token = localStorage.getItem('authorization'); 
+
+        if(token){
+    document.getElementById("logOut").style.visibility="visible"
+
+    const username = localStorage.getItem('name'); 
+
+    h3=document.getElementById("textH3")
+    h3.innerText="Hello "+username
+
+    document.getElementById("departmentsPage").style.visibility="visible"
+    document.getElementById("employeesPage").style.visibility="visible"
+}
+
+         async function Create(){
+
+            const Name = document.getElementById("Name").value
+            let ManagerID = document.getElementById("ManagerID").value
+            if(!ManagerID){
+                console.log("asd")
+                ManagerID="Does not have a Manage"
+            }
+            const Employees=[]
+            if(!Name ){
+                alert("Please enter a name")
+                return "Please enter a name"
+            }
+ 
+            const resp = await fetch(`http://localhost:8000/department/`, {
+                method: "POST",
+                headers: {"authorization": token, "Content-Type": "application/json" },
+                body: JSON.stringify({ Name,ManagerID,Employees })
+            })
+            const data = await resp.json();
+           console.log(resp.status)
+            console.log(data)
+
+
+             if(resp.status==500){
+                alert("department does not exist")
+
+                return "department does not exist"
+             }
+      
+          alert("Created!")
+                  
+        }
+
+ function Cancel(){
+        window.location.href = "./departmentsPage.html"
+
+ }
+        function logOut(){
+   localStorage.removeItem("authorization")
+   localStorage.removeItem("name")
+   window.location.href = "./LoginPage.html"
+         
+}
+    </script>
+</body>
+</html>

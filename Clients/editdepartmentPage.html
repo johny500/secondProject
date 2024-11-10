@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body onload="getDepartment() ,employeeTable()">
+    <button onclick="logOut()" style="visibility: hidden;" id="logOut">Log out</button>
+    
+    <button id="departmentsPage" style="visibility: hidden;" onclick="departmentsPage()">departments Page</button>
+    <h3  id="textH3"></h3>
+
+    <table border="1" style="visibility: hidden;" id="EmployeeFunc">
+        <tr>
+        <td>Go to User Profile</td>
+        <td>Make Manager</td>
+        <td>Delete from Department</td>
+    </tr>
+    </table>
+    
+    <table border="1" id="tab"> 
+        <tr>
+            <td>DepartmentID</td>
+            <td>Name</td>
+            <td>Manager</td>
+            <td>Employees</td>
+        </tr>
+    </table>
+
+    <table border="1" id="empTab">
+        <td>EmployeeID</td>
+        <td>fullName</td>
+        <td>Started working</td>
+        <td>ADD to Department</td>
+    </table>
+
+
+    <button onclick="updateDepartment()">Update!</button>
+    
+    <button onclick="deleteDepartment()">Delete!</button>
+
+    <button onclick="Cancel()">Cancel</button>
+
+    <script>
+    const departmentID = localStorage.getItem('department'); 
+
+    const token = localStorage.getItem('authorization'); 
+
+    if(token){
+    document.getElementById("logOut").style.visibility="visible"
+
+    const username = localStorage.getItem('name'); 
+
+    h3=document.getElementById("textH3")
+    h3.innerText="Hello "+username
+
+    document.getElementById("departmentsPage").style.visibility="visible"
+}
+
+
+    
+
+    if(!departmentID){
+        alert("Error Getting the departmentID")
+        window.location.href = "./departmentsPage.html"
+    }
+
+     async function getDepartment(){
+        let table=document.getElementById("tab")
+        const resp = await fetch(`http://localhost:8000/department/${departmentID}`, {
+                method: "GET",
+                headers: { "authorization": token,"Content-Type": "application/json" },           
+            })
+            const department = await resp.json()
+            console.log(department)
+
+            const tr = document.createElement("tr")
+            table.appendChild(tr)
+
+            const tdDepartmentId= document.createElement("td")
+            tdDepartmentId.innerText=department._id
+            tr.appendChild(tdDepartmentId)
+
+
+
+                const tdName = document.createElement("td")
+                let inputName=document.createElement("input")
+                inputName.value=department.Name
+                inputName.id="Name"
+                tdName.appendChild(inputName)
+                tr.appendChild(tdName)
+
+            const tdDepartmentManager= document.createElement("td")
+            tdDepartmentManager.innerText=department.Manager
+            tr.appendChild(tdDepartmentManager)
+
+            const tdEmployees = document.createElement("td")
+            let allEmployess=department.Employees
+            console.log(allEmployess)
+            allEmployess.forEach((emp)=>{
+                    let tdFullName=document.createElement("td")
+                    tdFullName.innerText=emp.FirstName+ " "+ emp.LastName
+                    tdEmployees.appendChild(tdFullName)
+
+                    tdFullName.addEventListener('click', function() {
+
+                    localStorage.setItem("Employee", emp._id)
+                     
+                    EmployeeFunctios(emp._id)
+                    
+                 })
+
+                })
+                tr.appendChild(tdEmployees)
+     }
+
+
+async function EmployeeFunctios(employeeID){  //Fix this
+
+let table=document.getElementById("EmployeeFunc")
+if(table.style.visibility=="hidden"){
+    table.style.visibility="visible"
+}
+
+else{
+table.innerHTML=`
+        <tr>
+        <td>Go to User Profile</td>
+        <td>Make Manager</td>
+        <td>Delete from Department</td>
+    </tr>
+    `
+}
+let tr=document.createElement("tr")
+table.appendChild(tr)
+
+let tdUserProfile=document.createElement("td")
+let buttonUserProfile=document.createElement("button")
+buttonUserProfile.innerText="User Profile"
+tdUserProfile.appendChild(buttonUserProfile)
+tr.appendChild(tdUserProfile)
+
+buttonUserProfile.addEventListener('click', function() {
+localStorage.setItem("Employee", employeeID)
+window.location.href = "./editEmployeePage.html"
+})
+
+
+let tdMakeAdmin=document.createElement("td")
+let buttonMakeAdmin=document.createElement("button")
+buttonMakeAdmin.innerText="Make Admin!"
+tdMakeAdmin.appendChild(buttonMakeAdmin)
+tr.appendChild(tdMakeAdmin)
+
+buttonMakeAdmin.addEventListener('click', function() {
+ makeManager(employeeID)
+})
+
+let tdRemoveFromDepartment=document.createElement("td")
+let buttonRemoveFromDepartment=document.createElement("button")
+buttonRemoveFromDepartment.innerText="RemoveFromDepartment"
+
+tdRemoveFromDepartment.appendChild(buttonRemoveFromDepartment)
+tr.appendChild(tdRemoveFromDepartment)
+
+buttonRemoveFromDepartment.addEventListener('click', function() {
+ RemoveEmployee(employeeID)
+})
+}
+
+async function RemoveEmployee(employeeID){
+    const resp = await fetch(`http://localhost:8000/department/employee/${departmentID}`, {
+                method: "PUT",
+                headers: { "authorization": token,"Content-Type": "application/json" },
+                body: JSON.stringify({employeeID})
+                
+            })
+            const data = await resp.json();
+            
+            if (!data) {
+            alert("something went worng")
+            console.log(data)
+            return "something went worng"
+            }
+            
+            alert("Remove From Department")
+}
+
+async function makeManager(employeeID) {
+    try {
+        const resp = await fetch(`http://localhost:8000/department/manager/${departmentID}`, {
+            method: "PUT",
+            headers: {
+                "authorization": token,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ employeeID })
+        });
+
+        if (!resp.ok) {
+            console.log("Error:" ,resp);
+            alert("Something went wrong: ");
+            return;
+        }
+
+        const data = await resp.json();
+        alert("Updated");
+
+    } catch (error) {
+        console.error("Request failed:", error);
+        alert("An error occurred while updating the manager.");
+    }
+}
+
+
+
+
+  async function employeeTable(){
+    let employeetable=document.getElementById("empTab")
+
+    const resp = await fetch(`http://localhost:8000/employee/`, {
+            method: "GET",
+            headers: {
+                "authorization": token,
+                "Content-Type": "application/json"
+            }
+        });
+
+        const data = await resp.json();
+       
+        const employees = data;
+            employees.forEach((employee) => {
+                   if(employee.DepartmentID ==departmentID){
+                    return
+                   }
+                   
+          
+                const tr = document.createElement("tr")
+                employeetable.appendChild(tr)
+
+                const tdEmployeeID = document.createElement("td")
+                tdEmployeeID.innerText = employee._id
+                console.log(employee._id)
+                tr.appendChild(tdEmployeeID)
+
+                const tdFullName = document.createElement("td")
+                let fullName=employee.FirstName + " " + employee.LastName
+                tdFullName.innerText =fullName
+                tr.appendChild(tdFullName)
+
+
+
+
+                const tdStartedWorkinYear = document.createElement("td")
+                tdStartedWorkinYear.innerText = employee.StartWorkYear
+                tr.appendChild(tdStartedWorkinYear)
+
+
+                const tdAddButton = document.createElement("td")
+                const Button = document.createElement("button")
+                Button.innerText = "Add"
+                tdAddButton.appendChild(Button)
+                tr.appendChild(tdAddButton)
+
+               
+                
+
+                Button.addEventListener('click',async function() {
+                    await AddEmployeeToDepartment(employee._id)
+                 })
+
+                tdFullName.addEventListener('click', function() {
+                    localStorage.setItem("Employee", employee._id)
+                    window.location.href = "./editEmployeePage.html"
+                 })
+
+             })
+  }
+
+
+
+
+async function AddEmployeeToDepartment(id){
+    console.log(departmentID.departmentID)
+    const resp = await fetch(`http://localhost:8000/employee/department/${id}`, {
+                method: "PUT",
+                headers: { "authorization": token,"Content-Type": "application/json" },
+                body: JSON.stringify({departmentID})
+                
+            })
+            const data = await resp.json();
+            
+            if (!data) {
+            alert("something went worng")
+            console.log(data)
+            return "something went worng"
+            }
+            
+            alert("updated")
+
+}
+
+    async function updateDepartment (){
+
+        const Name = document.getElementById("Name").value
+
+             if (!Name){
+              alert("please enter a Value")
+              return "put  the value!"
+             }
+
+            const resp = await fetch(`http://localhost:8000/department/${departmentID}`, {
+                method: "PUT",
+                headers: { "authorization": token,"Content-Type": "application/json" },
+                body: JSON.stringify({Name})
+                
+            })
+
+
+            console.log(JSON.stringify({ Name }));
+            const data = await resp.json()
+
+            if (!data.success) {
+                location.reload()
+            }
+            
+            alert(data.msg)
+            window.location.href = "./departmentsPage.html"
+        }
+
+
+        async function deleteDepartment(){
+            const resp = await fetch(`http://localhost:8000/department/${departmentID}`, {
+                method: "DELETE",
+                headers: {"authorization": token, "Content-Type": "application/json" }
+            })
+            alert("Deleted!")
+               window.location.href = "./departmentsPage.html"
+        }
+
+
+    function Cancel(){
+            window.location.href = "./departmentsPage.html"
+    }
+
+    </script>
+
+</body>
+</html>
